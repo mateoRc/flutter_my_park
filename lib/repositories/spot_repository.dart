@@ -6,7 +6,14 @@ abstract class SpotRepository {
     required double longitude,
     double radiusMeters = 1000,
   });
+
+  Future<List<Spot>> listOwned({required String ownerId});
+
+  Future<Spot?> getSpot(String id);
+
   Future<Spot> createSpot(Spot spot);
+
   Future<Spot> updateSpot(Spot spot);
+
   Future<void> deleteSpot(String id);
 }

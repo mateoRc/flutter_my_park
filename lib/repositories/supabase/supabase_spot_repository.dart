@@ -16,6 +16,7 @@ class SupabaseSpotRepository implements SpotRepository {
   final SupabaseClient _client;
   final RpcInvoker _rpc;
 
+  static const _table = 'spots';
   static const _rpcName = 'spots_nearby';
 
   @override
@@ -46,9 +47,33 @@ class SupabaseSpotRepository implements SpotRepository {
   }
 
   @override
+  Future<List<Spot>> listOwned({required String ownerId}) async {
+    final response = await _client
+        .from(_table)
+        .select()
+        .eq('owner_id', ownerId)
+        .order('created_at', ascending: false);
+
+    return (response as List<dynamic>)
+        .map((row) => Spot.fromJson(
+              Map<String, dynamic>.from(row as Map),
+            ))
+        .toList(growable: false);
+  }
+
+  @override
+  Future<Spot?> getSpot(String id) async {
+    final result = await _client.from(_table).select().eq('id', id).maybeSingle();
+    if (result == null) {
+      return null;
+    }
+    return Spot.fromJson(Map<String, dynamic>.from(result));
+  }
+
+  @override
   Future<Spot> createSpot(Spot spot) async {
     final inserted = await _client
-        .from('spots')
+        .from(_table)
         .insert(spot.toJson())
         .select()
         .single();
@@ -58,7 +83,7 @@ class SupabaseSpotRepository implements SpotRepository {
   @override
   Future<Spot> updateSpot(Spot spot) async {
     final updated = await _client
-        .from('spots')
+        .from(_table)
         .update(spot.toJson())
         .eq('id', spot.id)
         .select()
@@ -68,6 +93,6 @@ class SupabaseSpotRepository implements SpotRepository {
 
   @override
   Future<void> deleteSpot(String id) {
-    return _client.from('spots').delete().eq('id', id);
+    return _client.from(_table).delete().eq('id', id);
   }
 }

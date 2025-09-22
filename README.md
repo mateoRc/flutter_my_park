@@ -2,7 +2,7 @@
 
 Docker-first Flutter + Supabase example. The app authenticates with email/password or Google/Facebook entirely inside containers.
 
-## MVP Plan Status
+## MVP Plan Status phase 1
 - [ ] Run Supabase SQL for geospatial schema, security policies, storage bucket, and booking RPC
 - [ ] Seed Supabase with demo host/guest data
 - [x] Define Dart domain models for profiles, spots, photos, bookings, and favorites
@@ -11,6 +11,42 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
 - [ ] Build host spot create/edit flow with photo uploads
 - [ ] Implement guest map search and spot detail experience
 - [ ] Complete booking UI flow, listings, and final polish
+
+## MVP Plan Status phase 2 — Payments (high-level)
+- [ ] **Choose processor & flow**
+  - Stripe (PaymentSheet / Checkout), single currency, capture on booking.
+- [ ] **Server side (Supabase Edge Function)**
+  - Create PaymentIntent from booking draft; verify amount with DB; secure webhook.
+- [ ] **Client side (Flutter)**
+  - Start payment → present PaymentSheet → confirm → show receipt.
+- [ ] **Booking state machine**
+  - `pending → reserved → paid → cancelled(refunded)`; timeouts auto-cancel if unpaid.
+- [ ] **Refunds / cancellations**
+  - Simple rule set (e.g., full refund ≥24h before start); partial after; call refund API.
+- [ ] **Receipts & notifications**
+  - Email receipt on success; in-app alerts; store payment_id on booking.
+- [ ] **Anti-abuse & validation**
+  - Idempotency keys; price re-check before charge; limit rapid retries.
+- [ ] **Accounting basics**
+  - App fee % field; split calculation (for now, platform collects; payouts mock or manual).
+- [ ] **Compliance & config**
+  - Terms/Privacy links, currency locale, VAT field placeholders.
+
+
+## MVP Plan Status phase 3 — Deploy, Test, Release (high-level)
+- [ ] **Deploy**
+- Supabase: lock RLS, rotate keys; enable backups; set env vars.
+- App: Docker build; deploy Flutter web to Nginx (or Vercel/Netlify); set domains & HTTPS.
+- Payments: set live keys, update webhook URL, test end-to-end in live mode.
+- [ ] **Testing**
+- Unit: repos/models; Widget: key screens; Integration: auth → book → pay → cancel.
+- E2E smoke run with seeded data; webhook replay tests.
+- Add Sentry (crash + breadcrumb) and basic logging.
+- [ ] **Release**
+- Versioning + changelog; feature flags for payments.
+- Legal pages (Terms, Privacy, Refund policy) linked in app.
+- Monitoring dashboards (errors, bookings, payment success rate).
+- Post-release checklist: rollback plan, hotfix pipeline.
 
 ## Prerequisites
 
@@ -38,7 +74,7 @@ For social login, ensure Supabase has the Google and/or Facebook providers enabl
 
 ### Host accounts
 
-During email/password registration you can toggle "Register as a host". This writes `is_host=true` into the user�s Supabase metadata. After confirmation/login hosts are labelled on the home screen and can later be given access to spot management flows. Existing accounts can also be promoted by updating `auth.users.user_metadata` directly in Supabase.
+During email/password registration you can toggle "Register as a host". This writes `is_host=true` into the user�s Supabase metadata. After confirmation/login hosts are labelled on the home screen and can later be given access to spot management flows. Existing accounts can also be promoted by updating `auth.users.user_metadata` directly in Supabase.
 
 ### Google quick checklist
 
