@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/models.dart';
@@ -47,6 +48,23 @@ class HomeScreen extends ConsumerWidget {
                     isHost ? Icons.workspace_premium : Icons.person,
                     size: 18,
                   ),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 12,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: () => context.go('/spots/map'),
+                      icon: const Icon(Icons.map),
+                      label: const Text('Browse map'),
+                    ),
+                    if (isHost)
+                      FilledButton.icon(
+                        onPressed: () => context.go('/host/spots'),
+                        icon: const Icon(Icons.dashboard_customize),
+                        label: const Text('Manage my spots'),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 24),
                 const Expanded(child: SpotSearchPanel()),
@@ -189,11 +207,13 @@ class _SpotSearchPanelState extends ConsumerState<SpotSearchPanel> {
                     return ListTile(
                       title: Text(spot.title),
                       subtitle: Text(
-                        'Lat ${spot.lat.toStringAsFixed(4)}, Lng ${spot.lng.toStringAsFixed(4)}',
+                        'Lat ${spot.lat.toStringAsFixed(4)}, '
+                        'Lng ${spot.lng.toStringAsFixed(4)}',
                       ),
                       trailing: spot.priceHour != null
                           ? Text('€${spot.priceHour!.toStringAsFixed(2)}/h')
                           : null,
+                      onTap: () => context.push('/spots/${spot.id}'),
                     );
                   },
                 ),

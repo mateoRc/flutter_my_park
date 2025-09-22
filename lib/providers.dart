@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -77,4 +78,25 @@ final spotByIdProvider = FutureProvider.family<Spot?, String>((ref, spotId) {
 
 final spotPhotosProvider = FutureProvider.family<List<SpotPhoto>, String>((ref, spotId) {
   return ref.watch(spotPhotoRepositoryProvider).listSpotPhotos(spotId);
+});
+
+class MapQuery {
+  const MapQuery({
+    required this.latitude,
+    required this.longitude,
+    required this.radiusMeters,
+  });
+
+  final double latitude;
+  final double longitude;
+  final double radiusMeters;
+}
+
+final mapSpotsProvider = FutureProvider.autoDispose
+    .family<List<Spot>, MapQuery>((ref, query) async {
+  return ref.watch(spotRepositoryProvider).getNearby(
+        latitude: query.latitude,
+        longitude: query.longitude,
+        radiusMeters: query.radiusMeters,
+      );
 });

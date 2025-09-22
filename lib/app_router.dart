@@ -6,6 +6,8 @@ import 'screens/home_screen.dart';
 import 'screens/host_spot_form_screen.dart';
 import 'screens/host_spots_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/map_screen.dart';
+import 'screens/spot_detail_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = ref.watch(routeAuthNotifierProvider);
@@ -44,6 +46,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/home',
         name: 'home',
         builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: '/spots/map',
+        name: 'spots-map',
+        builder: (context, state) => const MapScreen(),
+      ),
+      GoRoute(
+        path: '/spots/:id',
+        name: 'spot-detail',
+        builder: (context, state) => SpotDetailScreen(spotId: state.params['id']!),
       ),
       GoRoute(
         path: '/host/spots',
