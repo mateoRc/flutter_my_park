@@ -1,0 +1,9 @@
+services:
+  flutter_web:
+    build:
+      context: .
+      args:
+        EXPO_PUBLIC_SUPABASE_URL: ${EXPO_PUBLIC_SUPABASE_URL:-https://your-project.supabase.co}
+        EXPO_PUBLIC_SUPABASE_KEY: ${EXPO_PUBLIC_SUPABASE_KEY:-public-anon-key}
+    ports:
+      - "8080:80"
