@@ -26,6 +26,16 @@ EXPO_PUBLIC_SUPABASE_KEY=your-anon-key
 
 For social login, ensure Supabase has the Google and/or Facebook providers enabled and that the redirect URLs include `http://localhost:8080/` (or your deployed domain).
 
+### Google quick checklist
+
+1. **Google Cloud Console › APIs & Services › Credentials › OAuth client (Web)**
+   - Authorized JavaScript origins: `http://localhost:8080`, `https://your-project.supabase.co`
+   - Authorized redirect URIs: `http://localhost:8080/`, `https://your-project.supabase.co/auth/v1/callback`
+2. **Supabase › Authentication › Providers › Google**
+   - Paste the Google client ID and secret
+   - Enable the provider
+3. Rebuild the app: `docker compose build && docker compose up`
+
 If the variables are omitted, placeholder values are used and authentication requests will fail.
 
 ## Run the app
