@@ -2,11 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/spot.dart';
 import '../spot_repository.dart';
-
-typedef RpcInvoker = Future<dynamic> Function(
-  String function, {
-  Map<String, dynamic>? params,
-});
+import 'rpc_invoker.dart';
 
 class SupabaseSpotRepository implements SpotRepository {
   SupabaseSpotRepository({

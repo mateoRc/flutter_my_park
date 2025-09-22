@@ -71,7 +71,12 @@ class _AuthGateState extends State<AuthGate> {
   Widget build(BuildContext context) {
     final session = _session;
     if (session != null && session.user != null) {
-      return HomePage(email: session.user?.email ?? '');
+      final user = session.user!;
+      final isHost = user.userMetadata?['is_host'] == true;
+      return HomePage(
+        email: user.email ?? '',
+        isHost: isHost,
+      );
     }
     return const AuthFlow();
   }
@@ -120,7 +125,10 @@ class _AuthFormState extends State<AuthForm> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _isHost = false;
   OAuthProvider? _oauthInProgress;
+
+  bool get _isRegister => widget.action == AuthAction.signUp;
 
   @override
   void dispose() {
@@ -133,7 +141,7 @@ class _AuthFormState extends State<AuthForm> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     if (email.isEmpty || password.isEmpty) {
-      _showMessage('Please fill in both fields.');
+      _showMessage('Please fill in both email and password.');
       return;
     }
 
@@ -143,7 +151,11 @@ class _AuthFormState extends State<AuthForm> {
       if (widget.action == AuthAction.signIn) {
         await auth.signInWithPassword(email: email, password: password);
       } else {
-        final response = await auth.signUp(email: email, password: password);
+        final response = await auth.signUp(
+          email: email,
+          password: password,
+          data: {'is_host': _isHost},
+        );
         if (response.session == null) {
           _showMessage('Check your inbox to confirm registration.');
         }
@@ -204,6 +216,15 @@ class _AuthFormState extends State<AuthForm> {
                 obscureText: true,
                 decoration: const InputDecoration(labelText: 'Password'),
               ),
+              if (_isRegister) ...[
+                const SizedBox(height: 16),
+                SwitchListTile(
+                  value: _isHost,
+                  onChanged: (value) => setState(() => _isHost = value),
+                  title: const Text('Register as a host'),
+                  subtitle: const Text('Hosts can create and manage parking spots.'),
+                ),
+              ],
               const SizedBox(height: 24),
               FilledButton(
                 onPressed: _isLoading ? null : _submit,
@@ -237,6 +258,15 @@ class _AuthFormState extends State<AuthForm> {
                     ? () => _signInWithProvider(OAuthProvider.facebook)
                     : null,
               ),
+              if (isLogin)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Text(
+                    'Hosts are recognised automatically from their profile metadata.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
             ],
           ),
         ),
@@ -278,9 +308,10 @@ class _OAuthButton extends StatelessWidget {
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.email});
+  const HomePage({super.key, required this.email, required this.isHost});
 
   final String email;
+  final bool isHost;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -291,6 +322,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final roleLabel = widget.isHost ? 'Host' : 'Guest';
     return Scaffold(
       appBar: AppBar(
         title: const Text('Home'),
@@ -313,6 +345,14 @@ class _HomePageState extends State<HomePage> {
               'Signed in as\n${widget.email}',
               textAlign: TextAlign.left,
               style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 4),
+            Chip(
+              label: Text(roleLabel),
+              avatar: Icon(
+                widget.isHost ? Icons.workspace_premium : Icons.person,
+                size: 18,
+              ),
             ),
             const SizedBox(height: 24),
             SpotSearchPanel(repository: _spotRepository),

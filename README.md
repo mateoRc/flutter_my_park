@@ -36,6 +36,10 @@ EXPO_PUBLIC_SUPABASE_KEY=your-anon-key
 
 For social login, ensure Supabase has the Google and/or Facebook providers enabled and that the redirect URLs include `http://localhost:8080/` (or your deployed domain).
 
+### Host accounts
+
+During email/password registration you can toggle "Register as a host". This writes `is_host=true` into the user’s Supabase metadata. After confirmation/login hosts are labelled on the home screen and can later be given access to spot management flows. Existing accounts can also be promoted by updating `auth.users.user_metadata` directly in Supabase.
+
 ### Google quick checklist
 
 1. **Google Cloud Console > APIs & Services > Credentials > OAuth client (Web)**
@@ -58,7 +62,6 @@ create extension if not exists postgis;
 create extension if not exists pgcrypto;
 
 -- Profiles
-default
 create table if not exists profiles (
   id uuid primary key default auth.uid(),
   name text,
@@ -243,33 +246,34 @@ create policy favorites_crud_self
 ### 2. Storage bucket policies
 
 ```sql
-select storage.create_bucket('spot-photos', public => true)
-where not exists (
-  select 1 from storage.buckets where id = 'spot-photos'
-);
+-- 1) Ensure bucket exists and is public (use direct upsert; no helper functions)
+insert into storage.buckets (id, name, public)
+values ('spot-photos', 'spot-photos', true)
+on conflict (id) do update set public = excluded.public;
 
--- Public read
+-- 2) Public READ for that bucket
 drop policy if exists spot_photos_public_read on storage.objects;
 create policy spot_photos_public_read
   on storage.objects for select
   using (bucket_id = 'spot-photos');
 
--- Authenticated uploads (first path segment must be spot UUID owned by user)
+-- 3) AUTHENTICATED INSERT only if first path segment is a spot UUID owned by the user
+--    (we regex-extract the first 36 chars as a UUID; NULL-safe)
 drop policy if exists spot_photos_owner_insert on storage.objects;
 create policy spot_photos_owner_insert
   on storage.objects for insert
   with check (
     bucket_id = 'spot-photos'
     and auth.role() = 'authenticated'
-    and position('/' in name) > 0
     and exists (
-      select 1 from spots
-      where spots.id = split_part(name, '/', 1)::uuid
-        and spots.owner_id = auth.uid()
+      select 1
+      from spots s
+      where s.id = (substring(name from '^[0-9a-fA-F-]{36}'))::uuid
+        and s.owner_id = auth.uid()
     )
   );
 
--- Owner deletes
+-- 4) AUTHENTICATED DELETE only by the owner of the referenced spot
 drop policy if exists spot_photos_owner_delete on storage.objects;
 create policy spot_photos_owner_delete
   on storage.objects for delete
@@ -277,9 +281,10 @@ create policy spot_photos_owner_delete
     bucket_id = 'spot-photos'
     and auth.role() = 'authenticated'
     and exists (
-      select 1 from spots
-      where spots.id = split_part(name, '/', 1)::uuid
-        and spots.owner_id = auth.uid()
+      select 1
+      from spots s
+      where s.id = (substring(name from '^[0-9a-fA-F-]{36}'))::uuid
+        and s.owner_id = auth.uid()
     )
   );
 ```
@@ -336,7 +341,7 @@ grant execute on function create_booking(uuid, timestamptz, timestamptz) to auth
 
 ### 4. Seed sample data
 
-Replace the placeholder UUIDs with real values from your project before running.
+Replace the placeholder UUIDs with real values from your project before running. To inspect existing users run `select id, email from auth.users;`.
 
 ```sql
 -- Replace with actual auth.users UUIDs
