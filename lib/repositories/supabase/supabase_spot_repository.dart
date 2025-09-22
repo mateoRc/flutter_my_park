@@ -3,13 +3,24 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/spot.dart';
 import '../spot_repository.dart';
 
+typedef RpcInvoker = Future<dynamic> Function(
+  String function, {
+  Map<String, dynamic>? params,
+});
+
 class SupabaseSpotRepository implements SpotRepository {
-  SupabaseSpotRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  SupabaseSpotRepository({
+    SupabaseClient? client,
+    RpcInvoker? rpc,
+  })  : _client = client ?? Supabase.instance.client,
+        _rpc = rpc ??
+            ((fn, {params}) => (client ?? Supabase.instance.client)
+                .rpc(fn, params: params));
 
   final SupabaseClient _client;
+  final RpcInvoker _rpc;
 
-  static const _rpc = 'spots_nearby';
+  static const _rpcName = 'spots_nearby';
 
   @override
   Future<List<Spot>> getNearby({
@@ -17,8 +28,8 @@ class SupabaseSpotRepository implements SpotRepository {
     required double longitude,
     double radiusMeters = 1000,
   }) async {
-    final response = await _client.rpc(
-      _rpc,
+    final response = await _rpc(
+      _rpcName,
       params: <String, dynamic>{
         'lat_input': latitude,
         'lng_input': longitude,

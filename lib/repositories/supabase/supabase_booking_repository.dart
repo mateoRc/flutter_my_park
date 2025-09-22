@@ -3,43 +3,64 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/booking.dart';
 import '../booking_repository.dart';
 
+typedef RpcInvoker = Future<dynamic> Function(
+  String function, {
+  Map<String, dynamic>? params,
+});
+
 class SupabaseBookingRepository implements BookingRepository {
-  SupabaseBookingRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  SupabaseBookingRepository({
+    SupabaseClient? client,
+    RpcInvoker? rpc,
+  })  : _client = client ?? Supabase.instance.client,
+        _rpc = rpc ??
+            ((fn, {params}) => (client ?? Supabase.instance.client)
+                .rpc(fn, params: params));
 
   final SupabaseClient _client;
+  final RpcInvoker _rpc;
 
   static const _table = 'bookings';
+  static const _createBookingRpc = 'create_booking';
 
   @override
   Future<Booking> createBooking({
     required String spotId,
-    required String userId,
-    required DateTime start,
-    required DateTime end,
+    required DateTime startTs,
+    required DateTime endTs,
   }) async {
-    final payload = <String, dynamic>{
-      'spot_id': spotId,
-      'user_id': userId,
-      'start_at': start.toIso8601String(),
-      'end_at': end.toIso8601String(),
-    };
+    final result = await _rpc(
+      _createBookingRpc,
+      params: <String, dynamic>{
+        'p_spot': spotId,
+        'p_start': startTs.toIso8601String(),
+        'p_end': endTs.toIso8601String(),
+      },
+    );
 
-    final inserted = await _client
-        .from(_table)
-        .insert(payload)
-        .select()
-        .single();
-    return Booking.fromJson(Map<String, dynamic>.from(inserted));
+    if (result == null) {
+      throw StateError('Booking RPC returned null');
+    }
+
+    final Map<String, dynamic> json;
+    if (result is Map) {
+      json = Map<String, dynamic>.from(result as Map);
+    } else if (result is List && result.isNotEmpty) {
+      json = Map<String, dynamic>.from(result.first as Map);
+    } else {
+      throw StateError('Unexpected booking RPC payload: $result');
+    }
+
+    return Booking.fromJson(json);
   }
 
   @override
-  Future<List<Booking>> getMyBookings(String userId) async {
+  Future<List<Booking>> getMyBookings(String guestId) async {
     final response = await _client
         .from(_table)
         .select()
-        .eq('user_id', userId)
-        .order('start_at', ascending: true);
+        .eq('guest_id', guestId)
+        .order('start_ts', ascending: true);
 
     return (response as List<dynamic>)
         .map((row) => Booking.fromJson(

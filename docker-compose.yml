@@ -7,3 +7,9 @@ services:
         EXPO_PUBLIC_SUPABASE_KEY: ${EXPO_PUBLIC_SUPABASE_KEY:-public-anon-key}
     ports:
       - "8080:80"
+  flutter_cli:
+    image: ghcr.io/cirruslabs/flutter:3.24.4
+    working_dir: /app
+    volumes:
+      - .:/app
+    entrypoint: ["bash", "-lc"]
