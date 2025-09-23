@@ -34,6 +34,13 @@ class HostSpotsScreen extends ConsumerWidget {
         return Scaffold(
           appBar: AppBar(
             title: const Text('My Spots'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.event_note),
+                tooltip: 'View bookings',
+                onPressed: () => context.go('/host/bookings'),
+              ),
+            ],
           ),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => context.go('/host/spots/new'),

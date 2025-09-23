@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'models/booking.dart';
 import 'models/spot.dart';
+import 'models/spot_bookings.dart';
 import 'models/spot_photo.dart';
 import 'repositories/booking_repository.dart';
 import 'repositories/spot_photo_repository.dart';
@@ -98,4 +100,26 @@ final mapSpotsProvider = FutureProvider.autoDispose
         longitude: query.longitude,
         radiusMeters: query.radiusMeters,
       );
+});
+
+final guestBookingsProvider = FutureProvider.family<List<Booking>, String>((ref, guestId) {
+  return ref.watch(bookingRepositoryProvider).getMyBookings(guestId);
+});
+
+final spotBookingsProvider = FutureProvider.family<List<Booking>, String>((ref, spotId) {
+  return ref.watch(bookingRepositoryProvider).getBookingsForSpot(spotId);
+});
+
+final hostSpotBookingsProvider = FutureProvider.family<List<SpotBookings>, String>((ref, ownerId) async {
+  final spots = await ref.watch(spotRepositoryProvider).listOwned(ownerId: ownerId);
+  final bookingRepository = ref.watch(bookingRepositoryProvider);
+
+  final groups = await Future.wait(
+    spots.map((spot) async {
+      final bookings = await bookingRepository.getBookingsForSpot(spot.id);
+      return SpotBookings(spot: spot, bookings: bookings);
+    }),
+  );
+
+  return groups;
 });

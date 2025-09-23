@@ -3,12 +3,12 @@
 Docker-first Flutter + Supabase example. The app authenticates with email/password or Google/Facebook entirely inside containers.
 
 ## MVP Plan Status phase 1
-- [ ] Run Supabase SQL for geospatial schema, security policies, storage bucket, and booking RPC
-- [ ] Seed Supabase with demo host/guest data
+- [x] Run Supabase SQL for geospatial schema, security policies, storage bucket, and booking RPC
+- [x] Seed Supabase with demo host/guest data
 - [x] Define Dart domain models for profiles, spots, photos, bookings, and favorites
 - [x] Implement Supabase repositories with geospatial search and booking RPC integration
-- [ ] Wire dependency injection and routing
-- [ ] Build host spot create/edit flow with photo uploads
+- [x] Wire dependency injection and routing
+- [x] Build host spot create/edit flow with photo uploads
 - [ ] Implement guest map search and spot detail experience
 - [ ] Complete booking UI flow, listings, and final polish
 
@@ -47,6 +47,7 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
 - Legal pages (Terms, Privacy, Refund policy) linked in app.
 - Monitoring dashboards (errors, bookings, payment success rate).
 - Post-release checklist: rollback plan, hotfix pipeline.
+- [ ] **AppStore / PlayStore**
 
 ## Prerequisites
 

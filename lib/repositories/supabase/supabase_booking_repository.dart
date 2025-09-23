@@ -44,7 +44,7 @@ class SupabaseBookingRepository implements BookingRepository {
     } else if (result is List && result.isNotEmpty) {
       json = Map<String, dynamic>.from(result.first as Map);
     } else {
-      throw StateError('Unexpected booking RPC payload: $result');
+      throw StateError('Unexpected booking RPC payload: ');
     }
 
     return Booking.fromJson(json);
@@ -58,15 +58,32 @@ class SupabaseBookingRepository implements BookingRepository {
         .eq('guest_id', guestId)
         .order('start_ts', ascending: true);
 
-    return (response as List<dynamic>)
-        .map((row) => Booking.fromJson(
-              Map<String, dynamic>.from(row as Map),
-            ))
-        .toList(growable: false);
+    return _mapRows(response);
+  }
+
+  @override
+  Future<List<Booking>> getBookingsForSpot(String spotId) async {
+    final response = await _client
+        .from(_table)
+        .select()
+        .eq('spot_id', spotId)
+        .order('start_ts', ascending: true);
+
+    return _mapRows(response);
   }
 
   @override
   Future<void> cancelBooking(String id) {
     return _client.from(_table).delete().eq('id', id);
+  }
+
+  List<Booking> _mapRows(dynamic response) {
+    return (response as List<dynamic>)
+        .map(
+          (row) => Booking.fromJson(
+            Map<String, dynamic>.from(row as Map),
+          ),
+        )
+        .toList(growable: false);
   }
 }

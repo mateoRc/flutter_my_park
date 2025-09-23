@@ -52,18 +52,30 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 Wrap(
                   spacing: 12,
+                  runSpacing: 12,
                   children: [
                     FilledButton.icon(
                       onPressed: () => context.go('/spots/map'),
                       icon: const Icon(Icons.map),
                       label: const Text('Browse map'),
                     ),
-                    if (isHost)
+                    FilledButton.icon(
+                      onPressed: () => context.go('/bookings'),
+                      icon: const Icon(Icons.event_note),
+                      label: const Text('My bookings'),
+                    ),
+                    if (isHost) ...[
                       FilledButton.icon(
                         onPressed: () => context.go('/host/spots'),
                         icon: const Icon(Icons.dashboard_customize),
                         label: const Text('Manage my spots'),
                       ),
+                      FilledButton.icon(
+                        onPressed: () => context.go('/host/bookings'),
+                        icon: const Icon(Icons.view_list),
+                        label: const Text('Spot bookings'),
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -211,7 +223,7 @@ class _SpotSearchPanelState extends ConsumerState<SpotSearchPanel> {
                         'Lng ${spot.lng.toStringAsFixed(4)}',
                       ),
                       trailing: spot.priceHour != null
-                          ? Text('€${spot.priceHour!.toStringAsFixed(2)}/h')
+                          ? Text('EUR ${spot.priceHour!.toStringAsFixed(2)}/h')
                           : null,
                       onTap: () => context.push('/spots/${spot.id}'),
                     );

@@ -3,10 +3,12 @@ import 'package:go_router/go_router.dart';
 
 import 'providers.dart';
 import 'screens/home_screen.dart';
+import 'screens/host_bookings_screen.dart';
 import 'screens/host_spot_form_screen.dart';
 import 'screens/host_spots_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/map_screen.dart';
+import 'screens/my_bookings_screen.dart';
 import 'screens/spot_detail_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -58,6 +60,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => SpotDetailScreen(spotId: state.pathParameters['id']!),
       ),
       GoRoute(
+        path: '/bookings',
+        name: 'my-bookings',
+        builder: (context, state) => const MyBookingsScreen(),
+      ),
+      GoRoute(
         path: '/host/spots',
         name: 'host-spots',
         builder: (context, state) => const HostSpotsScreen(),
@@ -73,6 +80,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => HostSpotFormScreen(
           spotId: state.pathParameters['id']!,
         ),
+      ),
+      GoRoute(
+        path: '/host/bookings',
+        name: 'host-bookings',
+        builder: (context, state) => const HostBookingsScreen(),
       ),
     ],
   );

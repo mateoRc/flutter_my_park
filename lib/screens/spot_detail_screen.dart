@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/models.dart';
@@ -14,6 +15,7 @@ class SpotDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final spotAsync = ref.watch(spotByIdProvider(spotId));
     final photosAsync = ref.watch(spotPhotosProvider(spotId));
+    final sessionAsync = ref.watch(sessionProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -54,9 +56,9 @@ class SpotDetailScreen extends ConsumerWidget {
                 runSpacing: 8,
                 children: [
                   if (spot.priceHour != null)
-                    Chip(label: Text('€${spot.priceHour!.toStringAsFixed(2)}/h')),
+                    Chip(label: Text('EUR ${spot.priceHour!.toStringAsFixed(2)}/h')),
                   if (spot.priceDay != null)
-                    Chip(label: Text('€${spot.priceDay!.toStringAsFixed(2)}/day')),
+                    Chip(label: Text('EUR ${spot.priceDay!.toStringAsFixed(2)}/day')),
                   ...spot.amenities.map((amenity) => Chip(label: Text(amenity))),
                 ],
               ),
@@ -71,31 +73,37 @@ class SpotDetailScreen extends ConsumerWidget {
                     return const Text('No photos uploaded yet.');
                   }
                   return Column(
-                    children: photos
-                        .map(
-                          (photo) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: AspectRatio(
-                              aspectRatio: 16 / 9,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.network(
-                                  _publicPhotoUrl(photo.path),
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
-                                    color: Colors.grey.shade300,
-                                    child: const Center(
-                                      child: Icon(Icons.image_not_supported),
-                                    ),
+                    children: [
+                      for (final photo in photos)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: AspectRatio(
+                            aspectRatio: 16 / 9,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                _publicPhotoUrl(photo.path),
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: Colors.grey.shade300,
+                                  child: const Center(
+                                    child: Icon(Icons.image_not_supported),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        )
-                        .toList(),
+                        ),
+                    ],
                   );
                 },
+              ),
+              const SizedBox(height: 24),
+              _buildBookingSection(
+                context: context,
+                ref: ref,
+                spot: spot,
+                sessionAsync: sessionAsync,
               ),
             ],
           );
@@ -108,4 +116,362 @@ class SpotDetailScreen extends ConsumerWidget {
     final storage = Supabase.instance.client.storage.from('spot-photos');
     return storage.getPublicUrl(path);
   }
+}
+
+Widget _buildBookingSection({
+  required BuildContext context,
+  required WidgetRef ref,
+  required Spot spot,
+  required AsyncValue<Session?> sessionAsync,
+}) {
+  return sessionAsync.when(
+    loading: () => const _SectionCard(
+      title: 'Bookings',
+      child: Center(child: CircularProgressIndicator()),
+    ),
+    error: (error, stackTrace) => _SectionCard(
+      title: 'Bookings',
+      child: Text('Session error: $error'),
+    ),
+    data: (session) {
+      if (session == null) {
+        return const _SectionCard(
+          title: 'Bookings',
+          child: Text('Sign in to request a booking.'),
+        );
+      }
+
+      final user = session.user;
+      final isOwner = user.id == spot.ownerId;
+
+      if (isOwner) {
+        return _SpotOwnerBookingsCard(spot: spot);
+      }
+
+      return _SpotBookingForm(
+        spot: spot,
+        user: user,
+      );
+    },
+  );
+}
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SpotBookingForm extends ConsumerStatefulWidget {
+  const _SpotBookingForm({
+    required this.spot,
+    required this.user,
+  });
+
+  final Spot spot;
+  final User user;
+
+  @override
+  ConsumerState<_SpotBookingForm> createState() => _SpotBookingFormState();
+}
+
+class _SpotBookingFormState extends ConsumerState<_SpotBookingForm> {
+  DateTime? _start;
+  DateTime? _end;
+  bool _submitting = false;
+  String? _error;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Book this spot',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Select start and end times. The booking will be confirmed if the spot is still free.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 16),
+            _DateTimePickerTile(
+              label: 'Start',
+              value: _start,
+              onTap: _submitting ? null : () => _pickDateTime(isStart: true),
+            ),
+            const SizedBox(height: 12),
+            _DateTimePickerTile(
+              label: 'End',
+              value: _end,
+              onTap: _submitting ? null : () => _pickDateTime(isStart: false),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ],
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: _submitting ? null : _submit,
+              icon: _submitting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.check),
+              label: Text(_submitting ? 'Submitting...' : 'Confirm booking'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickDateTime({required bool isStart}) async {
+    final now = DateTime.now();
+    final base = DateTime(now.year, now.month, now.day);
+    final initial = (isStart ? _start : _end) ?? _start ?? now;
+
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initial.toLocal(),
+      firstDate: base,
+      lastDate: base.add(const Duration(days: 365)),
+    );
+    if (date == null) {
+      return;
+    }
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initial.toLocal()),
+    );
+    if (time == null) {
+      return;
+    }
+
+    final selected = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+
+    setState(() {
+      if (isStart) {
+        _start = selected;
+        if (_end != null && !_end!.isAfter(_start!)) {
+          _end = _start!.add(const Duration(hours: 1));
+        }
+      } else {
+        _end = selected;
+      }
+    });
+  }
+
+  Future<void> _submit() async {
+    final start = _start;
+    final end = _end;
+
+    if (start == null || end == null) {
+      setState(() => _error = 'Select both start and end times.');
+      return;
+    }
+
+    if (!end.isAfter(start)) {
+      setState(() => _error = 'End time must be after the start time.');
+      return;
+    }
+
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+
+    try {
+      final booking = await ref.read(bookingRepositoryProvider).createBooking(
+            spotId: widget.spot.id,
+            startTs: start.toUtc(),
+            endTs: end.toUtc(),
+          );
+
+      ref.invalidate(guestBookingsProvider(widget.user.id));
+      ref.invalidate(spotBookingsProvider(widget.spot.id));
+      ref.invalidate(hostSpotBookingsProvider(widget.spot.ownerId));
+
+      if (!mounted) return;
+
+      setState(() {
+        _start = null;
+        _end = null;
+      });
+
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Booking created'),
+          content: Text(
+            'Your booking is confirmed from ${_formatRange(booking.startTs, booking.endTs)}.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.go('/bookings');
+              },
+              child: const Text('View my bookings'),
+            ),
+          ],
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = 'Failed to create booking: $error');
+    } finally {
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
+    }
+  }
+}
+
+class _DateTimePickerTile extends StatelessWidget {
+  const _DateTimePickerTile({
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  final String label;
+  final DateTime? value;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final subtitle = value == null
+        ? 'Select $label time'
+        : _formatSingleDateTime(value!);
+
+    return ListTile(
+      leading: const Icon(Icons.access_time),
+      title: Text(label),
+      subtitle: Text(subtitle),
+      onTap: onTap,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    );
+  }
+}
+
+class _SpotOwnerBookingsCard extends ConsumerWidget {
+  const _SpotOwnerBookingsCard({required this.spot});
+
+  final Spot spot;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bookingsAsync = ref.watch(spotBookingsProvider(spot.id));
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Upcoming bookings',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            bookingsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stackTrace) => Text('Failed to load bookings: $error'),
+              data: (bookings) {
+                if (bookings.isEmpty) {
+                  return const Text('No bookings yet.');
+                }
+                return Column(
+                  children: [
+                    for (final booking in bookings)
+                      ListTile(
+                        leading: const Icon(Icons.event_available),
+                        title: Text(_formatRange(booking.startTs, booking.endTs)),
+                        subtitle: Text('Guest: ${booking.guestId}'),
+                        trailing: Text('EUR ${booking.priceTotal.toStringAsFixed(2)}'),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _formatRange(DateTime start, DateTime end) {
+  final localStart = start.toLocal();
+  final localEnd = end.toLocal();
+
+  final startDate = _formatDate(localStart);
+  final endDate = _formatDate(localEnd);
+  final startTime = _formatTime(localStart);
+  final endTime = _formatTime(localEnd);
+
+  if (startDate == endDate) {
+    return '$startDate $startTime - $endTime';
+  }
+  return '$startDate $startTime -> $endDate $endTime';
+}
+
+String _formatSingleDateTime(DateTime value) {
+  final date = _formatDate(value.toLocal());
+  final time = _formatTime(value.toLocal());
+  return '$date $time';
+}
+
+String _formatDate(DateTime value) {
+  final month = value.month.toString().padLeft(2, '0');
+  final day = value.day.toString().padLeft(2, '0');
+  return '${value.year}-$month-$day';
+}
+
+String _formatTime(DateTime value) {
+  final hour = value.hour.toString().padLeft(2, '0');
+  final minute = value.minute.toString().padLeft(2, '0');
+  return '$hour:$minute';
 }
