@@ -47,6 +47,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         final user = session?.user;
         final email = user?.email ?? '';
         final isHost = user?.userMetadata?['is_host'] == true;
+        final profileAsync = user != null
+            ? ref.watch(profileProvider(user.id))
+            : AsyncValue<Profile?>.data(null);
+        final profileReminder = user != null
+            ? _buildProfileReminder(context, user.id, profileAsync)
+            : null;
         return Scaffold(
           appBar: AppBar(
             title: const Text('Home'),
@@ -95,6 +101,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       runSpacing: 12,
                       children: [
                         FilledButton.icon(
+                          onPressed: () => context.go('/profile'),
+                          icon: const Icon(Icons.manage_accounts),
+                          label: const Text('Edit profile'),
+                        ),
+                        FilledButton.icon(
                           onPressed: () => context.go('/spots/map'),
                           icon: const Icon(Icons.map),
                           label: const Text('Browse map'),
@@ -118,6 +129,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                       ],
                     ),
+                    if (profileReminder != null) ...[
+                      const SizedBox(height: 16),
+                      profileReminder,
+                    ],
                     const SizedBox(height: 24),
                     MiniMapPreview(query: _mapQuery),
                     const SizedBox(height: 24),
@@ -142,6 +157,83 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         body: Center(child: Text('Session error: $error')),
       ),
     );
+  }
+
+  Widget? _buildProfileReminder(
+    BuildContext context,
+    String userId,
+    AsyncValue<Profile?> profileAsync,
+  ) {
+    return profileAsync.when<Widget?>(
+      data: (profile) {
+        final missing = <String>[];
+        final nameEmpty = profile == null || (profile.name?.trim().isEmpty ?? true);
+        final phoneEmpty = profile == null || (profile.phone?.trim().isEmpty ?? true);
+
+        if (nameEmpty) {
+          missing.add('name');
+        }
+        if (phoneEmpty) {
+          missing.add('phone number');
+        }
+
+        if (missing.isEmpty) {
+          return null;
+        }
+
+        final summary = _joinWithAnd(missing);
+
+        return Card(
+          child: ListTile(
+            leading: const Icon(Icons.person_outline),
+            title: const Text('Complete your profile'),
+            subtitle: Text('Add your $summary to finish onboarding.'),
+            trailing: TextButton(
+              onPressed: () => context.go('/profile'),
+              child: const Text('Edit profile'),
+            ),
+          ),
+        );
+      },
+      loading: () => null,
+      error: (error, stackTrace) {
+        final scheme = Theme.of(context).colorScheme;
+        return Card(
+          color: scheme.errorContainer,
+          child: ListTile(
+            leading: const Icon(Icons.error_outline),
+            title: const Text('Profile unavailable'),
+            subtitle: Text('Failed to load profile: $error'),
+            trailing: TextButton(
+              onPressed: () => ref.invalidate(profileProvider(userId)),
+              child: const Text('Retry'),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _joinWithAnd(List<String> values) {
+    if (values.isEmpty) {
+      return '';
+    }
+    if (values.length == 1) {
+      return values.first;
+    }
+    if (values.length == 2) {
+      return '${values.first} and ${values.last}';
+    }
+    final buffer = StringBuffer();
+    for (var i = 0; i < values.length; i++) {
+      if (i == values.length - 1) {
+        buffer.write('and ${values[i]}');
+      } else {
+        buffer.write(values[i]);
+        buffer.write(', ');
+      }
+    }
+    return buffer.toString();
   }
 }
 

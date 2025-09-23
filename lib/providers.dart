@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'models/booking.dart';
+import 'models/profile.dart';
 import 'models/spot.dart';
 import 'models/spot_bookings.dart';
 import 'models/spot_photo.dart';
@@ -61,6 +62,11 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   final client = ref.watch(supabaseClientProvider);
   return SupabaseProfileRepository(client: client);
 });
+
+final profileProvider = FutureProvider.family<Profile?, String>((ref, userId) {
+  return ref.watch(profileRepositoryProvider).getProfile(userId);
+});
+
 final spotRepositoryProvider = Provider<SpotRepository>((ref) {
   final client = ref.watch(supabaseClientProvider);
   return SupabaseSpotRepository(client: client);
