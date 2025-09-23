@@ -429,22 +429,41 @@ declare
   v_hours numeric;
   v_total numeric;
   v_booking bookings;
+  v_now timestamptz := now();
 begin
+  if auth.uid() is null then
+    raise exception using message = 'booking_auth_required';
+  end if;
+
   if p_end <= p_start then
-    raise exception 'end must be after start';
+    raise exception using message = 'booking_end_before_start';
+  end if;
+
+  if p_start < v_now then
+    raise exception using message = 'booking_must_be_in_future';
   end if;
 
   select price_hour into v_price_per_hour from spots where id = p_spot;
   if v_price_per_hour is null then
-    raise exception 'spot not found or missing price';
+    raise exception using message = 'booking_spot_not_found';
   end if;
 
   if exists (
-    select 1 from bookings
-    where spot_id = p_spot
-      and tstzrange(start_ts, end_ts, '[)') && tstzrange(p_start, p_end, '[)')
+    select 1 from bookings b
+    where b.spot_id = p_spot
+      and b.status not in ('cancelled_guest', 'cancelled_host')
+      and tstzrange(b.start_ts, b.end_ts, '[)') && tstzrange(p_start, p_end, '[)')
   ) then
-    raise exception 'booking overlaps existing reservation';
+    raise exception using message = 'booking_overlap_spot';
+  end if;
+
+  if exists (
+    select 1 from bookings b
+    where b.guest_id = auth.uid()
+      and b.status not in ('cancelled_guest', 'cancelled_host')
+      and tstzrange(b.start_ts, b.end_ts, '[)') && tstzrange(p_start, p_end, '[)')
+  ) then
+    raise exception using message = 'booking_overlap_guest';
   end if;
 
   v_hours := ceil(extract(epoch from (p_end - p_start)) / 3600);
@@ -460,6 +479,68 @@ $$;
 
 revoke all on function create_booking from public;
 grant execute on function create_booking(uuid, timestamptz, timestamptz) to authenticated;
+
+create or replace function cancel_booking(
+  p_booking uuid,
+  p_host_override boolean default false
+) returns bookings
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_booking bookings;
+  v_spot_owner uuid;
+  v_now timestamptz := now();
+  v_new_status text;
+begin
+  if auth.uid() is null then
+    raise exception using message = 'booking_auth_required';
+  end if;
+
+  select b.* into v_booking
+  from bookings b
+  where b.id = p_booking;
+
+  if not found then
+    raise exception using message = 'booking_not_found';
+  end if;
+
+  select owner_id into v_spot_owner from spots where id = v_booking.spot_id;
+  if v_spot_owner is null then
+    raise exception using message = 'booking_spot_not_found';
+  end if;
+
+  if v_booking.status <> 'confirmed' then
+    raise exception using message = 'booking_cannot_cancel';
+  end if;
+
+  if v_booking.start_ts <= v_now then
+    raise exception using message = 'booking_started';
+  end if;
+
+  if v_booking.guest_id = auth.uid() then
+    if v_booking.start_ts - v_now < interval '24 hours' then
+      raise exception using message = 'booking_cancel_window_closed';
+    end if;
+    v_new_status := 'cancelled_guest';
+  elsif p_host_override and v_spot_owner = auth.uid() then
+    v_new_status := 'cancelled_host';
+  else
+    raise exception using message = 'booking_cancel_not_allowed';
+  end if;
+
+  update bookings
+     set status = v_new_status
+   where id = p_booking
+   returning * into v_booking;
+
+  return v_booking;
+end;
+$$;
+
+revoke all on function cancel_booking from public;
+grant execute on function cancel_booking(uuid, boolean) to authenticated;
 ```
 
 ### 4. Seed sample data
