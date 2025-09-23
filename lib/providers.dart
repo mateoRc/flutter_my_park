@@ -9,12 +9,13 @@ import 'models/spot.dart';
 import 'models/spot_bookings.dart';
 import 'models/spot_photo.dart';
 import 'repositories/booking_repository.dart';
+import 'repositories/profile_repository.dart';
 import 'repositories/spot_photo_repository.dart';
 import 'repositories/spot_repository.dart';
 import 'repositories/supabase/supabase_booking_repository.dart';
+import 'repositories/supabase/supabase_profile_repository.dart';
 import 'repositories/supabase/supabase_spot_photo_repository.dart';
 import 'repositories/supabase/supabase_spot_repository.dart';
-
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
   return Supabase.instance.client;
 });
@@ -54,6 +55,11 @@ final sessionProvider = StreamProvider<Session?>((ref) {
   return controller.stream;
 });
 
+
+final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  return SupabaseProfileRepository(client: client);
+});
 final spotRepositoryProvider = Provider<SpotRepository>((ref) {
   final client = ref.watch(supabaseClientProvider);
   return SupabaseSpotRepository(client: client);

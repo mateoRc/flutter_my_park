@@ -320,6 +320,18 @@ class _SpotBookingFormState extends ConsumerState<_SpotBookingForm> {
 
     try {
       final booking = await ref.read(bookingRepositoryProvider).createBooking(
+      final profileRepository = ref.read(profileRepositoryProvider);
+      final profile = await profileRepository.getProfile(widget.user.id);
+      if (profile == null) {
+        await profileRepository.updateProfile(
+          Profile(
+            id: widget.user.id,
+            name: widget.user.userMetadata?['full_name'] as String? ?? widget.user.email,
+            createdAt: DateTime.now().toUtc(),
+          ),
+        );
+      }
+
             spotId: widget.spot.id,
             startTs: start.toUtc(),
             endTs: end.toUtc(),
@@ -475,3 +487,4 @@ String _formatTime(DateTime value) {
   final minute = value.minute.toString().padLeft(2, '0');
   return '$hour:$minute';
 }
+

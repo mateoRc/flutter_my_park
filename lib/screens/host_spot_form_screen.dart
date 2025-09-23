@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/spot.dart';
+import '../models/profile.dart';
 import '../models/spot_photo.dart';
 import '../providers.dart';
 
@@ -231,6 +232,19 @@ class _HostSpotFormScreenState extends ConsumerState<HostSpotFormScreen> {
 
     try {
       final spotRepository = ref.read(spotRepositoryProvider);
+      final profileRepository = ref.read(profileRepositoryProvider);
+      final profile = await profileRepository.getProfile(ownerId);
+      if (profile == null) {
+        final authUser = ref.read(supabaseClientProvider).auth.currentUser;
+        await profileRepository.updateProfile(
+          Profile(
+            id: ownerId,
+            name: authUser?.userMetadata?['full_name'] as String? ?? authUser?.email,
+            createdAt: DateTime.now().toUtc(),
+          ),
+        );
+      }
+
       final photoRepository = ref.read(spotPhotoRepositoryProvider);
 
       if (existingSpot == null) {
@@ -488,3 +502,4 @@ class _HostSpotFormBody extends StatelessWidget {
     );
   }
 }
+
