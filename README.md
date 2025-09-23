@@ -16,6 +16,8 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
 - [ ] Add profile onboarding & editing flow
 - [ ] Support booking cancellation and status management
 - [ ] Backfill booking flow tests, metrics, and polish
+- [ ] Enhance booking confirmations with access instructions and map links
+- [ ] Make mini-map zoomable/interactable with live spot updates (radius/location changes)
 
 ## MVP Plan Status phase 2 — Payments (high-level)
 - [ ] **Choose processor & flow**
@@ -37,6 +39,9 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
 - [ ] **Compliance & config**
   - Terms/Privacy links, currency locale, VAT field placeholders.
 
+
+## Quick notes & questions
+- Booking while an active reservation exists: decide if overlapping bookings are allowed.
 
 ## MVP Plan Status phase 3 — Deploy, Test, Release (high-level)
 - [ ] **Deploy**
