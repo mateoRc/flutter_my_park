@@ -65,10 +65,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Signed in as\\n$email',
-                  textAlign: TextAlign.left,
-                  style: Theme.of(context).textTheme.titleMedium,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Signed in as',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    Text(
+                      email,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Chip(
@@ -125,7 +133,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (error, stackTrace) => Scaffold(
-        body: Center(child: Text('Session error: ')),
+        body: Center(child: Text('Session error: $error')),
       ),
     );
   }
@@ -156,11 +164,10 @@ class MiniMapPreview extends ConsumerWidget {
         final height = width * 1.1;
         final center = LatLng(query.latitude, query.longitude);
         final zoom = _zoomForRadius(query.radiusMeters);
-        final mapKey =
-            ValueKey('::');
+        final mapKey = ValueKey('${query.latitude}:${query.longitude}:${query.radiusMeters}');
 
         return Align(
-          alignment: Alignment.centerLeft,
+          alignment: Alignment.center,
           child: SizedBox(
             width: width,
             child: Card(
