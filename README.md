@@ -60,8 +60,17 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
 
 ## Quick notes, questions, nice to haves
 - Booking while an active reservation exists: decide if overlapping bookings are allowed.
-- radius seen on map
+- should radius be seen on map?
 - interactive icons on map (parking locations - description, clickable...)
+- Draft the profile onboarding/edit spec: pick exact fields (name, phone, vehicle, host toggle), decide where the edit screen lives, and sketch the Supabase updates you’ll need.
+- Document the booking overlap/cancellation policy (e.g., block overlapping bookings per user, allow host overrides) so the UI/backend work can follow.
+- Outline the confirmation improvements: what access instructions/links to collect per spot and where to surface them in the UI.
+- Add hover/click affordances to mini-map markers (e.g., subtle shadow, pulse) so users see they’re tappable.
+- Include spot thumbnails in the search list (Home + full map) for quicker visual scanning.
+- Surface a toast/snackbar when map search updates (e.g., “3 spots found near Zagreb”) to confirm the refresh.
+- In booking dialogs, show a countdown/confirmation summary (“Reserved from 10:00–12:00”) before closing to reassure users.
+- Offer a “Directions” button on spot detail (deep-link to Google/Apple Maps) to reduce friction after booking.
+
 
 ## User / Host Flows
 
@@ -78,8 +87,6 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
 3. Edit existing spots from Host dashboard.
 4. Monitor bookings via Host bookings list (read-only today).
 5. Pending: enrich booking confirmations with access instructions.
-
-
 
 
 # Production Readiness Checklist for MVP

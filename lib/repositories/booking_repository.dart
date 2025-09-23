@@ -9,5 +9,5 @@ abstract class BookingRepository {
 
   Future<List<Booking>> getMyBookings(String guestId);
   Future<List<Booking>> getBookingsForSpot(String spotId);
-  Future<void> cancelBooking(String id);
+  Future<Booking> cancelBooking({required String id, bool hostOverride = false});
 }

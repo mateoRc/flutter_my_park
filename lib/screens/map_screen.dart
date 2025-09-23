@@ -299,10 +299,10 @@ class _SpotMarker extends StatelessWidget {
 
   String _priceLabel() {
     final perHour = spot.priceHour != null
-        ? 'EUR ${spot.priceHour!.toStringAsFixed(0)}/h'
+        ? '${spot.priceHour!.toStringAsFixed(0)}€/h'
         : null;
     final perDay = spot.priceDay != null
-        ? 'EUR ${spot.priceDay!.toStringAsFixed(0)}/day'
+        ? '${spot.priceDay!.toStringAsFixed(0)}€/day'
         : null;
     if (perHour != null && perDay != null) {
       return '$perHour / $perDay';
@@ -313,40 +313,57 @@ class _SpotMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = _priceLabel();
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => context.push('/spots/${spot.id}'),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned(
-            bottom: 0,
-            child: DecoratedBox(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        splashColor: Colors.redAccent.withOpacity(0.2),
+        hoverColor: Colors.redAccent.withOpacity(0.1),
+        onTap: () => context.push('/spots/${spot.id}'),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(12),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.redAccent.withOpacity(0.35),
+                    blurRadius: 16,
+                    spreadRadius: 1,
+                  ),
+                ],
               ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
+              child: const Icon(
+                Icons.location_on,
+                color: Colors.redAccent,
+                size: 32,
+              ),
+            ),
+            Positioned(
+              bottom: 0,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          const Icon(
-            Icons.location_on,
-            color: Colors.redAccent,
-            size: 32,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,72 +60,78 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ],
           ),
-          body: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              final searchHeight = math.max(420.0, constraints.maxHeight - 520.0);
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Signed in as',
-                      style: Theme.of(context).textTheme.titleSmall,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Signed in as',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        Text(
+                          email,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
                     ),
-                    Text(
-                      email,
-                      style: Theme.of(context).textTheme.titleMedium,
+                    const SizedBox(height: 4),
+                    Chip(
+                      label: Text(isHost ? 'Host' : 'Guest'),
+                      avatar: Icon(
+                        isHost ? Icons.workspace_premium : Icons.person,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        FilledButton.icon(
+                          onPressed: () => context.go('/spots/map'),
+                          icon: const Icon(Icons.map),
+                          label: const Text('Browse map'),
+                        ),
+                        FilledButton.icon(
+                          onPressed: () => context.go('/bookings'),
+                          icon: const Icon(Icons.event_note),
+                          label: const Text('My bookings'),
+                        ),
+                        if (isHost) ...[
+                          FilledButton.icon(
+                            onPressed: () => context.go('/host/spots'),
+                            icon: const Icon(Icons.dashboard_customize),
+                            label: const Text('Manage my spots'),
+                          ),
+                          FilledButton.icon(
+                            onPressed: () => context.go('/host/bookings'),
+                            icon: const Icon(Icons.view_list),
+                            label: const Text('Spot bookings'),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    MiniMapPreview(query: _mapQuery),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      height: searchHeight,
+                      child: SpotSearchPanel(
+                        initialQuery: _mapQuery,
+                        onQueryChanged: _updateMapQuery,
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Chip(
-                  label: Text(isHost ? 'Host' : 'Guest'),
-                  avatar: Icon(
-                    isHost ? Icons.workspace_premium : Icons.person,
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    FilledButton.icon(
-                      onPressed: () => context.go('/spots/map'),
-                      icon: const Icon(Icons.map),
-                      label: const Text('Browse map'),
-                    ),
-                    FilledButton.icon(
-                      onPressed: () => context.go('/bookings'),
-                      icon: const Icon(Icons.event_note),
-                      label: const Text('My bookings'),
-                    ),
-                    if (isHost) ...[
-                      FilledButton.icon(
-                        onPressed: () => context.go('/host/spots'),
-                        icon: const Icon(Icons.dashboard_customize),
-                        label: const Text('Manage my spots'),
-                      ),
-                      FilledButton.icon(
-                        onPressed: () => context.go('/host/bookings'),
-                        icon: const Icon(Icons.view_list),
-                        label: const Text('Spot bookings'),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 24),
-                MiniMapPreview(query: _mapQuery),
-                const SizedBox(height: 24),
-                Expanded(
-                  child: SpotSearchPanel(
-                    initialQuery: _mapQuery,
-                    onQueryChanged: _updateMapQuery,
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         );
       },
@@ -149,10 +155,10 @@ class MiniMapPreview extends ConsumerWidget {
 
   String _priceLabelForSpot(Spot spot) {
     final perHour = spot.priceHour != null
-        ? 'EUR ${spot.priceHour!.toStringAsFixed(0)}/h'
+        ? '${spot.priceHour!.toStringAsFixed(0)}€/h'
         : null;
     final perDay = spot.priceDay != null
-        ? 'EUR ${spot.priceDay!.toStringAsFixed(0)}/day'
+        ? '${spot.priceDay!.toStringAsFixed(0)}€/day'
         : null;
     if (perHour != null && perDay != null) {
       return '$perHour / $perDay';
@@ -180,37 +186,58 @@ class MiniMapPreview extends ConsumerWidget {
         final mapKey = ValueKey('${query.latitude}:${query.longitude}:${query.radiusMeters}');
 
         Widget markerContent(Spot spot) {
-          return Stack(
-            alignment: Alignment.center,
-            children: [
-              Positioned(
-                bottom: 0,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+          return Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(24),
+              splashColor: Colors.redAccent.withOpacity(0.2),
+              hoverColor: Colors.redAccent.withOpacity(0.1),
+              onTap: () => context.push('/spots/${spot.id}'),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.redAccent.withOpacity(0.35),
+                          blurRadius: 16,
+                          spreadRadius: 1,
+                        ),
+                      ],
                     ),
-                    child: Text(
-                      _priceLabelForSpot(spot),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
+                    child: const Icon(
+                      Icons.location_on,
+                      color: Colors.redAccent,
+                      size: 28,
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        child: Text(
+                          _priceLabelForSpot(spot),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
-              const Icon(
-                Icons.location_on,
-                color: Colors.redAccent,
-                size: 28,
-              ),
-            ],
+            ),
           );
         }
 
@@ -243,11 +270,7 @@ class MiniMapPreview extends ConsumerWidget {
                                     point: LatLng(spot.lat, spot.lng),
                                     width: 80,
                                     height: 80,
-                                    child: GestureDetector(
-                                      behavior: HitTestBehavior.opaque,
-                                      onTap: () => context.push('/spots/${spot.id}'),
-                                      child: markerContent(spot),
-                                    ),
+                                    child: markerContent(spot),
                                   ),
                                 )
                                 .toList(),
