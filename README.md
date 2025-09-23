@@ -13,11 +13,12 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
 - [x] Build host spot create/edit flow with photo uploads
 - [x] Implement guest map search and spot detail experience
 - [x] Complete booking UI flow, listings, and final polish
-- [ ] Add profile onboarding & editing flow
-- [ ] Support booking cancellation and status management
+- [ ] Add profile onboarding & editing flow (collect name, phone, host flag) wired to Supabase
+- [ ] Define booking cancellation/overlap policy across UI and backend
 - [ ] Backfill booking flow tests, metrics, and polish
 - [ ] Enhance booking confirmations with access instructions and map links
-- [ ] Make mini-map zoomable/interactable with live spot updates (radius/location changes)
+- [ ] Establish local QA loop (flutter analyze/test + docker compose build)
+- [x] Deliver fully interactive mini-map experience across flows
 
 ## MVP Plan Status phase 2 — Payments (high-level)
 - [ ] **Choose processor & flow**

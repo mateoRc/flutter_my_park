@@ -19,7 +19,7 @@ class MapScreen extends ConsumerStatefulWidget {
 class _MapScreenState extends ConsumerState<MapScreen> {
   static const _defaultCenter = LatLng(45.8150, 15.9819);
   static const _defaultZoom = 14.0;
-  static const _defaultRadiusMeters = 1000.0;
+  static const _defaultRadiusMeters = 10000.0;
 
   late final MapController _mapController;
   MapQuery? _query;
