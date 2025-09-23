@@ -140,6 +140,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 }
 
 class MiniMapPreview extends ConsumerWidget {
+  String _priceLabelForSpot(Spot spot) {
+    final perHour = spot.priceHour != null
+        ? 'EUR ${spot.priceHour!.toStringAsFixed(0)}/h'
+        : null;
+    final perDay = spot.priceDay != null
+        ? 'EUR ${spot.priceDay!.toStringAsFixed(0)}/day'
+        : null;
+    if (perHour != null && perDay != null) {
+      return '$perHour / $perDay';
+    }
+    return perHour ?? perDay ?? 'Tap for details';
+  }
+
   const MiniMapPreview({
     super.key,
     required this.query,
@@ -449,13 +462,13 @@ class _SpotSearchPanelState extends ConsumerState<SpotSearchPanel> {
                     return ListTile(
                       title: Text(spot.title),
                       subtitle: Text(
-                        'Lat , '
-                        'Lng ',
+                        'Lat ${spot.lat.toStringAsFixed(4)}, '
+                        'Lng ${spot.lng.toStringAsFixed(4)}',
                       ),
                       trailing: spot.priceHour != null
-                          ? Text('EUR /h')
+                          ? Text('EUR ${spot.priceHour!.toStringAsFixed(2)}/h')
                           : null,
-                      onTap: () => context.push('/spots/'),
+                      onTap: () => context.push('/spots/${spot.id}'),
                     );
                   },
                 ),

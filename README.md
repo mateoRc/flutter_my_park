@@ -46,7 +46,7 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
   - Supabase: lock RLS, rotate keys; enable backups; set env vars.
   - App: Docker build; deploy Flutter web to Nginx (or Vercel/Netlify); set domains & HTTPS.
   - Payments: set live keys, update webhook URL, test end-to-end in live mode.
-- [ ] **Testing**
+- [ ] **Testing & Fixes**
   - Unit: repos/models; Widget: key screens; Integration: auth → book → pay → cancel.
   - E2E smoke run with seeded data; webhook replay tests.
   - Add Sentry (crash + breadcrumb) and basic logging.
