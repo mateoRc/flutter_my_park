@@ -18,9 +18,9 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final auth = ref.read(supabaseClientProvider).auth;
       final session = auth.currentSession;
-      final loggingIn = state.subloc == '/login';
+      final loggingIn = state.uri.path == '/login';
       final isHost = auth.currentUser?.userMetadata?['is_host'] == true;
-      final isHostRoute = state.subloc.startsWith('/host');
+      final isHostRoute = state.uri.path.startsWith('/host');
 
       if (session == null) {
         return loggingIn ? null : '/login';
@@ -55,7 +55,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/spots/:id',
         name: 'spot-detail',
-        builder: (context, state) => SpotDetailScreen(spotId: state.params['id']!),
+        builder: (context, state) => SpotDetailScreen(spotId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/host/spots',
@@ -71,7 +71,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/host/spots/:id',
         name: 'host-spot-edit',
         builder: (context, state) => HostSpotFormScreen(
-          spotId: state.params['id']!,
+          spotId: state.pathParameters['id']!,
         ),
       ),
     ],
