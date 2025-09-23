@@ -43,6 +43,21 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
 ## Quick notes & questions
 - Booking while an active reservation exists: decide if overlapping bookings are allowed.
 
+## User / Host Flows
+
+### Guest
+1. Sign in/sign up (email/password or social).
+2. Browse home mini-map or open full map, adjust radius/location.
+3. View spot detail, review amenities/photos.
+4. Submit booking request (pick time range, confirm).
+5. Review bookings in My Bookings list (future: cancellation policy TBD).
+
+### Host
+1. Sign in and ensure profile flagged as host.
+2. Create spots via Host > New spot (form + photo upload).
+3. Edit existing spots from Host dashboard.
+4. Monitor bookings via Host bookings list (read-only today).
+5. Pending: enrich booking confirmations with access instructions.
 ## MVP Plan Status phase 3 — Deploy, Test, Release (high-level)
 - [ ] **Deploy**
 - Supabase: lock RLS, rotate keys; enable backups; set env vars.
