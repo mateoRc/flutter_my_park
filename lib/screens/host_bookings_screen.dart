@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/spot_bookings.dart';
@@ -58,7 +58,10 @@ class HostBookingsScreen extends ConsumerWidget {
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final group = groups[index];
-                  return _HostSpotBookingsTile(group: group);
+                  return _HostSpotBookingsTile(
+                    group: group,
+                    ownerId: user.id,
+                  );
                 },
               );
             },
@@ -69,33 +72,142 @@ class HostBookingsScreen extends ConsumerWidget {
   }
 }
 
-class _HostSpotBookingsTile extends StatelessWidget {
-  const _HostSpotBookingsTile({required this.group});
+class _HostSpotBookingsTile extends ConsumerStatefulWidget {
+  const _HostSpotBookingsTile({
+    required this.group,
+    required this.ownerId,
+  });
 
   final SpotBookings group;
+  final String ownerId;
+
+  @override
+  ConsumerState<_HostSpotBookingsTile> createState() => _HostSpotBookingsTileState();
+}
+
+class _HostSpotBookingsTileState extends ConsumerState<_HostSpotBookingsTile> {
+  String? _cancellingId;
+
+  Future<void> _cancelBooking(String bookingId) async {
+    setState(() => _cancellingId = bookingId);
+    try {
+      await ref
+          .read(bookingRepositoryProvider)
+          .cancelBooking(id: bookingId, hostOverride: true);
+      ref.invalidate(hostSpotBookingsProvider(widget.ownerId));
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            const SnackBar(content: Text('Booking cancelled')),
+          );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(content: Text('Failed to cancel booking: $error')),
+          );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _cancellingId = null);
+      }
+    }
+  }
+
+  String _statusLabel(String status) {
+    switch (status) {
+      case 'cancelled_guest':
+        return 'Cancelled by guest';
+      case 'cancelled_host':
+        return 'Cancelled by host';
+      default:
+        return 'Confirmed';
+    }
+  }
+
+  Color? _statusColor(String status, ColorScheme scheme) {
+    if (status == 'cancelled_guest' || status == 'cancelled_host') {
+      return scheme.errorContainer;
+    }
+    return scheme.secondaryContainer;
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (group.bookings.isEmpty) {
+    if (widget.group.bookings.isEmpty) {
       return Card(
         child: ListTile(
-          title: Text(group.spot.title),
+          title: Text(widget.group.spot.title),
           subtitle: const Text('No bookings yet.'),
         ),
       );
     }
 
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return Card(
       child: ExpansionTile(
-        title: Text(group.spot.title),
-        subtitle: Text('${group.bookings.length} booking(s)'),
+        title: Text(widget.group.spot.title),
+        subtitle: Text('${widget.group.bookings.length} booking(s)'),
         children: [
-          for (final booking in group.bookings)
-            ListTile(
-              leading: const Icon(Icons.event_available),
-              title: Text(_formatRange(booking.startTs, booking.endTs)),
-              subtitle: Text('Guest: ${booking.guestId}'),
-              trailing: Text('EUR ${booking.priceTotal.toStringAsFixed(2)}'),
+          for (final booking in widget.group.bookings)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _formatRange(booking.startTs, booking.endTs),
+                          style: theme.textTheme.titleSmall,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Chip(
+                        label: Text(_statusLabel(booking.status)),
+                        backgroundColor: _statusColor(booking.status, scheme),
+                        labelStyle: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text('Guest: ${booking.guestId}'),
+                  const SizedBox(height: 4),
+                  Text('${booking.priceTotal.toStringAsFixed(2)}€'),
+                  const SizedBox(height: 4),
+                  if (booking.status == 'cancelled_guest')
+                    const Text('Guest cancelled this booking.'),
+                  if (booking.status == 'cancelled_host')
+                    const Text('You cancelled this booking.'),
+                  if (booking.status == 'confirmed')
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: _cancellingId == booking.id
+                            ? null
+                            : () => _cancelBooking(booking.id),
+                        icon: _cancellingId == booking.id
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.cancel_schedule_send),
+                        label: Text(
+                          _cancellingId == booking.id
+                              ? 'Cancelling…'
+                              : 'Cancel booking',
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
         ],
       ),

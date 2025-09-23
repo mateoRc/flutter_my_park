@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/models.dart';
 import '../providers.dart';
@@ -299,6 +300,46 @@ class _SpotBookingFormState extends ConsumerState<_SpotBookingForm> {
     });
   }
 
+  String? _resolvedInstructions() {
+    final raw = widget.spot.accessInstructions?.trim();
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+    return raw;
+  }
+
+  String _resolvedMapLink() {
+    final provided = widget.spot.mapLink?.trim();
+    if (provided != null && provided.isNotEmpty) {
+      return provided;
+    }
+    final lat = widget.spot.lat.toStringAsFixed(6);
+    final lng = widget.spot.lng.toStringAsFixed(6);
+    return 'https://www.google.com/maps?q=' + lat + ',' + lng;
+  }
+
+  Future<void> _openMapLink(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          const SnackBar(content: Text('Map link is invalid.')),
+        );
+      return;
+    }
+
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          const SnackBar(content: Text('Could not open map link.')),
+        );
+    }
+  }
+
   Future<void> _submit() async {
     final start = _start;
     final end = _end;
@@ -343,6 +384,9 @@ class _SpotBookingFormState extends ConsumerState<_SpotBookingForm> {
 
       if (!mounted) return;
 
+      final instructions = _resolvedInstructions();
+      final mapLink = _resolvedMapLink();
+
       setState(() {
         _start = null;
         _end = null;
@@ -350,25 +394,64 @@ class _SpotBookingFormState extends ConsumerState<_SpotBookingForm> {
 
       await showDialog<void>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Booking created'),
-          content: Text(
-            'Your booking is confirmed from ${_formatRange(booking.startTs, booking.endTs)}.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
+        builder: (dialogContext) {
+          final theme = Theme.of(dialogContext);
+          final address = widget.spot.address?.trim();
+          return AlertDialog(
+            title: const Text('Booking created'),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Your booking is confirmed from ${_formatRange(booking.startTs, booking.endTs)}.',
+                  ),
+                  if (address != null && address.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text('Address', style: theme.textTheme.titleSmall),
+                    const SizedBox(height: 4),
+                    Text(address, style: theme.textTheme.bodyMedium),
+                  ],
+                  if (instructions != null) ...[
+                    const SizedBox(height: 12),
+                    Text('Access instructions', style: theme.textTheme.titleSmall),
+                    const SizedBox(height: 4),
+                    Text(
+                      instructions,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  Text('Map & directions', style: theme.textTheme.titleSmall),
+                  const SizedBox(height: 4),
+                  SelectableText(
+                    mapLink,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ],
+              ),
             ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                context.go('/bookings');
-              },
-              child: const Text('View my bookings'),
-            ),
-          ],
-        ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Close'),
+              ),
+              TextButton.icon(
+                onPressed: () => _openMapLink(mapLink),
+                icon: const Icon(Icons.map),
+                label: const Text('Open map'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  context.go('/bookings');
+                },
+                child: const Text('View my bookings'),
+              ),
+            ],
+          );
+        },
       );
     } catch (error) {
       if (!mounted) return;

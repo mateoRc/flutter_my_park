@@ -16,7 +16,8 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
 - [ ] Add profile onboarding & editing flow (collect name, phone, host flag) wired to Supabase
 - [ ] Define booking cancellation/overlap policy across UI and backend
 - [ ] Backfill booking flow tests, metrics, and polish
-- [ ] Enhance booking confirmations with access instructions and map links
+- [x] Enhance booking confirmations with access instructions and map links
+- [x] Enhance my bookings with access instructions and map links
 - [ ] Establish local QA loop (flutter analyze/test + docker compose build)
 - [x] Deliver fully interactive mini-map experience across flows
 

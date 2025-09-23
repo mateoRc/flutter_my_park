@@ -29,6 +29,8 @@ class _HostSpotFormScreenState extends ConsumerState<HostSpotFormScreen> {
   final _priceHourController = TextEditingController();
   final _priceDayController = TextEditingController();
   final _amenitiesController = TextEditingController();
+  final _accessInstructionsController = TextEditingController();
+  final _mapLinkController = TextEditingController();
 
   bool _initialisedFromSpot = false;
   bool _submitting = false;
@@ -43,6 +45,8 @@ class _HostSpotFormScreenState extends ConsumerState<HostSpotFormScreen> {
     _priceHourController.dispose();
     _priceDayController.dispose();
     _amenitiesController.dispose();
+    _accessInstructionsController.dispose();
+    _mapLinkController.dispose();
     super.dispose();
   }
 
@@ -80,6 +84,8 @@ class _HostSpotFormScreenState extends ConsumerState<HostSpotFormScreen> {
             priceHourController: _priceHourController,
             priceDayController: _priceDayController,
             amenitiesController: _amenitiesController,
+            accessInstructionsController: _accessInstructionsController,
+            mapLinkController: _mapLinkController,
             newPhotos: _newPhotos,
             onPickPhotos: _pickPhotos,
             onRemoveNewPhoto: _removeNewPhoto,
@@ -115,6 +121,8 @@ class _HostSpotFormScreenState extends ConsumerState<HostSpotFormScreen> {
               _priceHourController.text = spot.priceHour?.toString() ?? '';
               _priceDayController.text = spot.priceDay?.toString() ?? '';
               _amenitiesController.text = spot.amenities.join(', ');
+              _accessInstructionsController.text = spot.accessInstructions ?? '';
+              _mapLinkController.text = spot.mapLink ?? '';
               _initialisedFromSpot = true;
             }
 
@@ -135,6 +143,8 @@ class _HostSpotFormScreenState extends ConsumerState<HostSpotFormScreen> {
                 priceHourController: _priceHourController,
                 priceDayController: _priceDayController,
                 amenitiesController: _amenitiesController,
+                accessInstructionsController: _accessInstructionsController,
+                mapLinkController: _mapLinkController,
                 newPhotos: _newPhotos,
                 onPickPhotos: _pickPhotos,
                 onRemoveNewPhoto: _removeNewPhoto,
@@ -225,6 +235,12 @@ class _HostSpotFormScreenState extends ConsumerState<HostSpotFormScreen> {
       priceHour: priceHour,
       priceDay: priceDay,
       amenities: amenities,
+      accessInstructions: _accessInstructionsController.text.trim().isEmpty
+          ? null
+          : _accessInstructionsController.text.trim(),
+      mapLink: _mapLinkController.text.trim().isEmpty
+          ? null
+          : _mapLinkController.text.trim(),
       createdAt: existingSpot?.createdAt ?? now,
     );
 
@@ -325,6 +341,8 @@ class _HostSpotFormBody extends StatelessWidget {
     required this.priceHourController,
     required this.priceDayController,
     required this.amenitiesController,
+    required this.accessInstructionsController,
+    required this.mapLinkController,
     required this.newPhotos,
     required this.onPickPhotos,
     required this.onRemoveNewPhoto,
@@ -343,6 +361,8 @@ class _HostSpotFormBody extends StatelessWidget {
   final TextEditingController priceHourController;
   final TextEditingController priceDayController;
   final TextEditingController amenitiesController;
+  final TextEditingController accessInstructionsController;
+  final TextEditingController mapLinkController;
   final List<PlatformFile> newPhotos;
   final Future<void> Function() onPickPhotos;
   final void Function(int index) onRemoveNewPhoto;
@@ -446,6 +466,34 @@ class _HostSpotFormBody extends StatelessWidget {
                 labelText: 'Amenities',
                 helperText: 'Comma-separated (e.g. covered, charger, secured)',
               ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: accessInstructionsController,
+              decoration: const InputDecoration(
+                labelText: 'Access instructions',
+                helperText: 'Share arrival details, gate codes, or parking tips.',
+              ),
+              maxLines: 3,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: mapLinkController,
+              decoration: const InputDecoration(
+                labelText: 'Custom map link',
+                helperText: 'Optional; paste a Google/Apple Maps link for guests.',
+              ),
+              keyboardType: TextInputType.url,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return null;
+                }
+                final uri = Uri.tryParse(value.trim());
+                if (uri == null || uri.scheme.isEmpty) {
+                  return 'Enter a valid URL';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 24),
             Text('Photos', style: Theme.of(context).textTheme.titleMedium),

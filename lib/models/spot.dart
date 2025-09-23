@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import "package:flutter/foundation.dart";
 
 class Spot {
   Spot({
@@ -11,6 +11,8 @@ class Spot {
     this.priceHour,
     this.priceDay,
     List<String>? amenities,
+    this.accessInstructions,
+    this.mapLink,
     required this.createdAt,
   }) : amenities = List.unmodifiable(amenities ?? const []);
 
@@ -23,6 +25,8 @@ class Spot {
   final double? priceHour;
   final double? priceDay;
   final List<String> amenities;
+  final String? accessInstructions;
+  final String? mapLink;
   final DateTime createdAt;
 
   Spot copyWith({
@@ -35,6 +39,8 @@ class Spot {
     double? priceHour,
     double? priceDay,
     List<String>? amenities,
+    String? accessInstructions,
+    String? mapLink,
     DateTime? createdAt,
   }) {
     return Spot(
@@ -47,6 +53,8 @@ class Spot {
       priceHour: priceHour ?? this.priceHour,
       priceDay: priceDay ?? this.priceDay,
       amenities: amenities ?? this.amenities,
+      accessInstructions: accessInstructions ?? this.accessInstructions,
+      mapLink: mapLink ?? this.mapLink,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -61,10 +69,9 @@ class Spot {
       address: json['address'] as String?,
       priceHour: (json['price_hour'] as num?)?.toDouble(),
       priceDay: (json['price_day'] as num?)?.toDouble(),
-      amenities: (json['amenities'] as List?)
-              ?.map((item) => item as String)
-              .toList() ??
-          const [],
+      amenities: (json['amenities'] as List?)?.map((item) => item as String).toList() ?? const [],
+      accessInstructions: json['access_instructions'] as String?,
+      mapLink: json['map_link'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
@@ -80,6 +87,8 @@ class Spot {
       if (priceHour != null) 'price_hour': priceHour,
       if (priceDay != null) 'price_day': priceDay,
       'amenities': amenities,
+      if (accessInstructions != null) 'access_instructions': accessInstructions,
+      if (mapLink != null) 'map_link': mapLink,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -97,6 +106,8 @@ class Spot {
         other.priceHour == priceHour &&
         other.priceDay == priceDay &&
         listEquals(other.amenities, amenities) &&
+        other.accessInstructions == accessInstructions &&
+        other.mapLink == mapLink &&
         other.createdAt == createdAt;
   }
 
@@ -111,6 +122,8 @@ class Spot {
         priceHour,
         priceDay,
         Object.hashAll(amenities),
+        accessInstructions,
+        mapLink,
         createdAt,
       );
 }
