@@ -66,7 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Signed in as\n',
+                  'Signed in as\\n$email',
                   textAlign: TextAlign.left,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
@@ -457,5 +457,8 @@ class _SpotSearchPanelState extends ConsumerState<SpotSearchPanel> {
     );
   }
 }
+
+
+
 
 
