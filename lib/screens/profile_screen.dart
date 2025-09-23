@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/profile.dart';
 import '../providers.dart';
+import '../utils/phone_formatter.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -101,15 +103,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         controller: _phoneController,
                         decoration: const InputDecoration(
                           labelText: 'Phone number',
-                          helperText: 'Include country code for easier contact.',
+                          helperText: 'Use international format, e.g. +385123456.',
                         ),
                         keyboardType: TextInputType.phone,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Phone number is required';
-                          }
-                          return null;
-                        },
+                        textInputAction: TextInputAction.done,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9+\- ]')),
+                        ],
+                        validator: (value) => validatePhoneNumber(value ?? ''),
                       ),
                       const SizedBox(height: 32),
                       FilledButton.icon(
@@ -146,7 +147,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final initialPhone = profile?.phone ?? '';
 
     _nameController.text = initialName;
-    _phoneController.text = initialPhone;
+    _phoneController.text = formatPhoneNumberForDisplay(initialPhone);
     _initialised = true;
   }
 
@@ -160,20 +161,32 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     try {
       final repository = ref.read(profileRepositoryProvider);
+      final normalizedPhone = normalizePhoneNumber(_phoneController.text);
       final updated = Profile(
         id: user.id,
         name: _nameController.text.trim(),
-        phone: _phoneController.text.trim(),
+        phone: normalizedPhone.isEmpty ? null : normalizedPhone,
         createdAt: current?.createdAt ?? DateTime.now().toUtc(),
       );
 
       await repository.updateProfile(updated);
+
+      if (user.userMetadata?['needs_profile'] == true) {
+        try {
+          await Supabase.instance.client.auth.updateUser(
+            UserAttributes(data: {'needs_profile': false}),
+          );
+        } catch (_) {
+          // Non-fatal: metadata update failure should not block profile saves.
+        }
+      }
 
       ref.invalidate(profileProvider(user.id));
       if (mounted) {
         setState(() {
           _initialised = false;
         });
+        _phoneController.text = formatPhoneNumberForDisplay(normalizedPhone);
       } else {
         return;
       }

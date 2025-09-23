@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/profile.dart';
 import '../providers.dart';
 
 class LoginScreen extends ConsumerWidget {
@@ -66,6 +68,22 @@ class _AuthFormState extends ConsumerState<_AuthForm> {
 
   GoTrueClient get _auth => ref.read(supabaseClientProvider).auth;
 
+  Future<void> _ensureProfileExists(User user) async {
+    final repository = ref.read(profileRepositoryProvider);
+    final existing = await repository.getProfile(user.id);
+    if (existing != null) {
+      return;
+    }
+
+    await repository.updateProfile(
+      Profile(
+        id: user.id,
+        name: user.userMetadata?['full_name'] as String? ?? user.email,
+        createdAt: DateTime.now().toUtc(),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -84,14 +102,58 @@ class _AuthFormState extends ConsumerState<_AuthForm> {
     setState(() => _isLoading = true);
     try {
       if (widget.action == _AuthAction.signIn) {
-        await _auth.signInWithPassword(email: email, password: password);
+        final response = await _auth.signInWithPassword(
+          email: email,
+          password: password,
+        );
+
+        final session = response.session;
+        final user = response.user;
+        if (session != null && user != null) {
+          await _ensureProfileExists(user);
+
+          final metadata = user.userMetadata ?? const <String, dynamic>{};
+          final isHostUser = metadata['is_host'] == true;
+          final needsProfile = metadata['needs_profile'] == true;
+          if (isHostUser && needsProfile && mounted) {
+            ScaffoldMessenger.of(context)
+              ..clearSnackBars()
+              ..showSnackBar(
+                const SnackBar(content: Text('Let\'s finish your host profile.')),
+              );
+            context.go('/profile');
+          }
+        }
       } else {
         final response = await _auth.signUp(
           email: email,
           password: password,
-          data: {'is_host': _isHost},
+          data: {
+            'is_host': _isHost,
+            if (_isHost) 'needs_profile': true,
+          },
         );
-        if (response.session == null) {
+
+        final session = response.session;
+        final user = response.user;
+
+        if (_isHost) {
+          if (session != null && user != null) {
+            await _ensureProfileExists(user);
+            if (mounted) {
+              ScaffoldMessenger.of(context)
+                ..clearSnackBars()
+                ..showSnackBar(
+                  const SnackBar(content: Text('Welcome! Let\'s finish your host profile.')),
+                );
+              context.go('/profile');
+            }
+          } else {
+            _showMessage(
+              'Check your inbox to confirm registration. Once verified, sign in and complete your host profile.',
+            );
+          }
+        } else if (session == null) {
           _showMessage('Check your inbox to confirm registration.');
         }
       }
