@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../models/models.dart';
 import '../providers.dart';
+import '../repositories/booking_exceptions.dart';
 
 class SpotDetailScreen extends ConsumerWidget {
   const SpotDetailScreen({super.key, required this.spotId});
@@ -453,6 +454,9 @@ class _SpotBookingFormState extends ConsumerState<_SpotBookingForm> {
           );
         },
       );
+    } on BookingException catch (error) {
+      if (!mounted) return;
+      setState(() => _error = error.message);
     } catch (error) {
       if (!mounted) return;
       setState(() => _error = 'Failed to create booking: $error');

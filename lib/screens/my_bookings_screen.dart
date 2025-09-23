@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/booking.dart';
 import '../models/spot.dart';
 import '../providers.dart';
+import '../repositories/booking_exceptions.dart';
 
 class MyBookingsScreen extends ConsumerWidget {
   const MyBookingsScreen({super.key});
@@ -173,6 +174,14 @@ class _BookingTileState extends ConsumerState<_BookingTile> {
           ..clearSnackBars()
           ..showSnackBar(
             const SnackBar(content: Text('Booking cancelled')),
+          );
+      }
+    } on BookingException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(content: Text(error.message)),
           );
       }
     } catch (error) {

@@ -17,6 +17,7 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
 - [x] Define booking cancellation/overlap policy across backend (Supabase)
 - [ ] Define booking cancellation/overlap policy across UI
 - [ ] Backfill booking flow tests, metrics, and polish
+- [ ] Add device-friendly validation/formatting for phone numbers and confirm country-code expectations
 - [x] Enhance booking confirmations with access instructions and map links
 - [x] Enhance my bookings with access instructions and map links
 - [ ] Establish local QA loop (flutter analyze/test + docker compose build)
