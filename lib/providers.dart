@@ -16,6 +16,7 @@ import 'repositories/supabase/supabase_booking_repository.dart';
 import 'repositories/supabase/supabase_profile_repository.dart';
 import 'repositories/supabase/supabase_spot_photo_repository.dart';
 import 'repositories/supabase/supabase_spot_repository.dart';
+
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
   return Supabase.instance.client;
 });

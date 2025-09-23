@@ -319,7 +319,6 @@ class _SpotBookingFormState extends ConsumerState<_SpotBookingForm> {
     });
 
     try {
-      final booking = await ref.read(bookingRepositoryProvider).createBooking(
       final profileRepository = ref.read(profileRepositoryProvider);
       final profile = await profileRepository.getProfile(widget.user.id);
       if (profile == null) {
@@ -332,10 +331,11 @@ class _SpotBookingFormState extends ConsumerState<_SpotBookingForm> {
         );
       }
 
-            spotId: widget.spot.id,
-            startTs: start.toUtc(),
-            endTs: end.toUtc(),
-          );
+      final booking = await ref.read(bookingRepositoryProvider).createBooking(
+        spotId: widget.spot.id,
+        startTs: start.toUtc(),
+        endTs: end.toUtc(),
+      );
 
       ref.invalidate(guestBookingsProvider(widget.user.id));
       ref.invalidate(spotBookingsProvider(widget.spot.id));

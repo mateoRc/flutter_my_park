@@ -9,8 +9,11 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
 - [x] Implement Supabase repositories with geospatial search and booking RPC integration
 - [x] Wire dependency injection and routing
 - [x] Build host spot create/edit flow with photo uploads
-- [ ] Implement guest map search and spot detail experience
-- [ ] Complete booking UI flow, listings, and final polish
+- [x] Implement guest map search and spot detail experience
+- [x] Complete booking UI flow, listings, and final polish
+- [ ] Add profile onboarding & editing flow
+- [ ] Support booking cancellation and status management
+- [ ] Backfill booking flow tests, metrics, and polish
 
 ## MVP Plan Status phase 2 — Payments (high-level)
 - [ ] **Choose processor & flow**
@@ -48,6 +51,50 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
 - Monitoring dashboards (errors, bookings, payment success rate).
 - Post-release checklist: rollback plan, hotfix pipeline.
 - [ ] **AppStore / PlayStore**
+
+
+
+# Production Readiness Checklist for MVP
+
+## Ship-only-if (Hard Gates)
+- [ ] **SLOs defined & met**: p(99.x) latency, uptime target, error budget.
+- [ ] **Security basics**: AuthN/Z, secrets management, TLS everywhere, input validation, least-privilege IAM, dependency scanning & patching.
+- [ ] **Data safety**: Backups + tested restore, reversible migrations, PII compliance, encryption at rest/in transit.
+- [ ] **Reliability**: No Sev-1 bugs, graceful degradation, idempotent ops, bounded retries, circuit breakers/timeouts.
+- [ ] **Observability**: Logs, metrics, traces (with correlation IDs), dashboards + alerts on SLOs.
+- [ ] **Deploy/rollback**: Automated deploy, canary or blue/green, one-click rollback.
+- [ ] **Runbooks**: On-call rotation, incident playbooks, pager wired.
+
+## Strongly Recommended Before GA
+- [ ] **Load test**: ≥2–3× expected peak + soak test; capacity plan.
+- [ ] **Test coverage**: Unit/integration/e2e for critical paths; smoke test post-deploy.
+- [ ] **Cost guardrails**: Budgets + alerts; basic perf profiling.
+- [ ] **Docs**: “How to run,” “How to recover,” API contract, changelog.
+- [ ] **Support path**: Status page, user-facing issue/report flow.
+
+## Bare-minimum Launch Checklist
+- [ ] SLOs & alerts  
+- [ ] AuthN/Z + TLS + secret mgmt  
+- [ ] Backup + restore tested  
+- [ ] Reversible DB migrations  
+- [ ] Canary/blue-green + rollback  
+- [ ] Dashboards + log aggregation  
+- [ ] On-call + runbooks  
+- [ ] Load test ≥2× peak  
+- [ ] Critical-path tests + smoke test  
+
+## Quick Scorecard (Ship if ≥8/10)
+1. Security  
+2. Data safety  
+3. Reliability  
+4. Observability  
+5. Deployment  
+6. Rollback  
+7. Load test  
+8. Tests  
+9. Runbooks/on-call  
+10. Cost guardrails
+
 
 ## Prerequisites
 
