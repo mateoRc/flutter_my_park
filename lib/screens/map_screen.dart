@@ -159,7 +159,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     Marker(
                       point: _mapController.center,
                       width: 200,
-                      height: 40,
+                      height: 80,
                       alignment: Alignment.topCenter,
                       child: Tooltip(
                         message: 'Failed to load: $error',
@@ -173,8 +173,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       .map(
                         (spot) => Marker(
                           point: LatLng(spot.lat, spot.lng),
-                          width: 40,
-                          height: 40,
+                          width: 80,
+                          height: 80,
                           child: _SpotMarker(spot: spot),
                         ),
                       )
@@ -297,14 +297,56 @@ class _SpotMarker extends StatelessWidget {
 
   final Spot spot;
 
+  String _priceLabel() {
+    final perHour = spot.priceHour != null
+        ? 'EUR ${spot.priceHour!.toStringAsFixed(0)}/h'
+        : null;
+    final perDay = spot.priceDay != null
+        ? 'EUR ${spot.priceDay!.toStringAsFixed(0)}/day'
+        : null;
+    if (perHour != null && perDay != null) {
+      return '$perHour / $perDay';
+    }
+    return perHour ?? perDay ?? 'Tap for details';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final label = _priceLabel();
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => context.push('/spots/${spot.id}'),
-      child: const Icon(
-        Icons.location_on,
-        color: Colors.redAccent,
-        size: 32,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(
+            bottom: 0,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const Icon(
+            Icons.location_on,
+            color: Colors.redAccent,
+            size: 32,
+          ),
+        ],
       ),
     );
   }

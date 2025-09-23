@@ -140,6 +140,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 }
 
 class MiniMapPreview extends ConsumerWidget {
+  const MiniMapPreview({
+    super.key,
+    required this.query,
+  });
+
+  final MapQuery query;
+
   String _priceLabelForSpot(Spot spot) {
     final perHour = spot.priceHour != null
         ? 'EUR ${spot.priceHour!.toStringAsFixed(0)}/h'
@@ -152,13 +159,6 @@ class MiniMapPreview extends ConsumerWidget {
     }
     return perHour ?? perDay ?? 'Tap for details';
   }
-
-  const MiniMapPreview({
-    super.key,
-    required this.query,
-  });
-
-  final MapQuery query;
 
   double _zoomForRadius(double radius) {
     const baseRadius = HomeScreen._defaultRadius;
@@ -178,6 +178,41 @@ class MiniMapPreview extends ConsumerWidget {
         final center = LatLng(query.latitude, query.longitude);
         final zoom = _zoomForRadius(query.radiusMeters);
         final mapKey = ValueKey('${query.latitude}:${query.longitude}:${query.radiusMeters}');
+
+        Widget markerContent(Spot spot) {
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              Positioned(
+                bottom: 0,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    child: Text(
+                      _priceLabelForSpot(spot),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.location_on,
+                color: Colors.redAccent,
+                size: 28,
+              ),
+            ],
+          );
+        }
 
         return Align(
           alignment: Alignment.center,
@@ -206,12 +241,12 @@ class MiniMapPreview extends ConsumerWidget {
                                 .map(
                                   (spot) => Marker(
                                     point: LatLng(spot.lat, spot.lng),
-                                    width: 32,
-                                    height: 32,
-                                    child: const Icon(
-                                      Icons.location_on,
-                                      color: Colors.redAccent,
-                                      size: 28,
+                                    width: 80,
+                                    height: 80,
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () => context.push('/spots/${spot.id}'),
+                                      child: markerContent(spot),
                                     ),
                                   ),
                                 )
@@ -236,7 +271,7 @@ class MiniMapPreview extends ConsumerWidget {
                             child: Padding(
                               padding: const EdgeInsets.all(8),
                               child: Text(
-                                'Spots failed to load: ',
+                                'Spots failed to load: ${spotsAsync.error}',
                                 style: const TextStyle(color: Colors.white),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -261,9 +296,9 @@ class MiniMapPreview extends ConsumerWidget {
                             ),
                             child: Text(
                               spotsAsync.maybeWhen(
-                                    data: (spots) => ' spot(s) nearby',
-                                    orElse: () => 'Use gestures to explore',
-                                  ),
+                                data: (spots) => '${spots.length} spot(s) nearby',
+                                orElse: () => 'Use gestures to explore',
+                              ),
                               style: const TextStyle(color: Colors.white),
                             ),
                           ),
