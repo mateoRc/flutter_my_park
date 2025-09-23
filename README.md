@@ -2,6 +2,8 @@
 
 Docker-first Flutter + Supabase example. The app authenticates with email/password or Google/Facebook entirely inside containers.
 
+# PROJECT PLAN
+
 ## MVP Plan Status phase 1
 - [x] Run Supabase SQL for geospatial schema, security policies, storage bucket, and booking RPC
 - [x] Seed Supabase with demo host/guest data
@@ -53,7 +55,6 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
 - [ ] **AppStore / PlayStore**
 
 
-
 # Production Readiness Checklist for MVP
 
 ## Ship-only-if (Hard Gates)
@@ -94,6 +95,9 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
 8. Tests  
 9. Runbooks/on-call  
 10. Cost guardrails
+
+
+# DEVELOPMENT
 
 
 ## Prerequisites
