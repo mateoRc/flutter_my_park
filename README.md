@@ -14,7 +14,8 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
 - [x] Implement guest map search and spot detail experience
 - [x] Complete booking UI flow, listings, and final polish
 - [ ] Add profile onboarding & editing flow (collect name, phone, host flag) wired to Supabase
-- [ ] Define booking cancellation/overlap policy across UI and backend
+- [x] Define booking cancellation/overlap policy across backend (Supabase)
+- [ ] Define booking cancellation/overlap policy across UI
 - [ ] Backfill booking flow tests, metrics, and polish
 - [x] Enhance booking confirmations with access instructions and map links
 - [x] Enhance my bookings with access instructions and map links
@@ -43,11 +44,16 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
 
 
   ## MVP Plan Status phase 3 — Deploy, Test, Release (high-level)
+- [ ] **Final Polising UI/UX**
+- [ ] **Testing & Fixes - pre deploy**
+  - Unit: repos/models; Widget: key screens; Integration: auth → book → pay → cancel.
+  - E2E smoke run with seeded data; webhook replay tests.
+  - Add Sentry (crash + breadcrumb) and basic logging.
 - [ ] **Deploy**
   - Supabase: lock RLS, rotate keys; enable backups; set env vars.
   - App: Docker build; deploy Flutter web to Nginx (or Vercel/Netlify); set domains & HTTPS.
   - Payments: set live keys, update webhook URL, test end-to-end in live mode.
-- [ ] **Testing & Fixes**
+- [ ] **Testing & Fixes - post deploy**
   - Unit: repos/models; Widget: key screens; Integration: auth → book → pay → cancel.
   - E2E smoke run with seeded data; webhook replay tests.
   - Add Sentry (crash + breadcrumb) and basic logging.
@@ -56,8 +62,9 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
   - Legal pages (Terms, Privacy, Refund policy) linked in app.
   - Monitoring dashboards (errors, bookings, payment success rate).
   - Post-release checklist: rollback plan, hotfix pipeline.
-- [ ] **AppStore / PlayStore**
-
+- [ ] **AppStore / PlayStore publish**
+- [ ] **Testing & Fixes - post release**
+  - TODO:
 
 ## Quick notes, questions, nice to haves
 - Booking while an active reservation exists: decide if overlapping bookings are allowed.
@@ -71,6 +78,7 @@ Docker-first Flutter + Supabase example. The app authenticates with email/passwo
 - Surface a toast/snackbar when map search updates (e.g., “3 spots found near Zagreb”) to confirm the refresh.
 - In booking dialogs, show a countdown/confirmation summary (“Reserved from 10:00–12:00”) before closing to reassure users.
 - Offer a “Directions” button on spot detail (deep-link to Google/Apple Maps) to reduce friction after booking.
+- "nicer" map layers, check other providers/maps
 
 
 ## User / Host Flows
@@ -498,17 +506,14 @@ begin
     raise exception using message = 'booking_auth_required';
   end if;
 
-  select b.* into v_booking
+  select b.*, s.owner_id
+    into v_booking, v_spot_owner
   from bookings b
+  join spots s on s.id = b.spot_id
   where b.id = p_booking;
 
   if not found then
     raise exception using message = 'booking_not_found';
-  end if;
-
-  select owner_id into v_spot_owner from spots where id = v_booking.spot_id;
-  if v_spot_owner is null then
-    raise exception using message = 'booking_spot_not_found';
   end if;
 
   if v_booking.status <> 'confirmed' then

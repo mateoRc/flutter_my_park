@@ -1,7 +1,8 @@
-﻿import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/booking.dart';
 import '../booking_repository.dart';
+import '../booking_exceptions.dart';
 import 'rpc_invoker.dart';
 
 class SupabaseBookingRepository implements BookingRepository {
@@ -26,14 +27,19 @@ class SupabaseBookingRepository implements BookingRepository {
     required DateTime startTs,
     required DateTime endTs,
   }) async {
-    final result = await _rpc(
-      _createBookingRpc,
-      params: <String, dynamic>{
-        'p_spot': spotId,
-        'p_start': startTs.toIso8601String(),
-        'p_end': endTs.toIso8601String(),
-      },
-    );
+    dynamic result;
+    try {
+      result = await _rpc(
+        _createBookingRpc,
+        params: <String, dynamic>{
+          'p_spot': spotId,
+          'p_start': startTs.toIso8601String(),
+          'p_end': endTs.toIso8601String(),
+        },
+      );
+    } on PostgrestException catch (error) {
+      throw mapBookingException(error, isCancellation: false);
+    }
 
     if (result == null) {
       throw StateError('Booking RPC returned null');
@@ -112,3 +118,6 @@ class SupabaseBookingRepository implements BookingRepository {
         .toList(growable: false);
   }
 }
+
+
+

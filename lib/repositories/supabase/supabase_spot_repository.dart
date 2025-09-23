@@ -26,13 +26,13 @@ class SupabaseSpotRepository implements SpotRepository {
     double radiusMeters = 1000,
   }) async {
     final response = await _rpc(
-      _rpcName,
-      params: <String, dynamic>{
-        'lat_input': latitude,
-        'lng_input': longitude,
-        'radius_m': radiusMeters,
-      },
-    );
+    _rpcName,
+    params: <String, dynamic>{
+      'lat_input': latitude,
+      'lng_input': longitude,
+      'radius_m': radiusMeters.round(), // or toInt()
+    },
+  );
 
     final rows = response as List<dynamic>?;
     if (rows == null) {
